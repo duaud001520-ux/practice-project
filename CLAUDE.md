@@ -3,6 +3,8 @@
 ## 목표
 - 서울과기대 SCI 부트캠프 경진대회 1등 (7/31)
 - Whisper 기반 STT 성능(ERR) 개선이 본체 (평가 배점: 성능 60 / 아이디어 20 / 발표 20)
+- **ERR(%) = (Baseline − New) / Baseline × 100** — 절대 오류율이 아니라 baseline 대비 상대 개선율(강의자료 확인).
+  한국어는 CER을 주 지표로 사용. "ERR 10% 이상 = 20점" → baseline CER 대비 10% 상대 개선이 만점 기준
 - 서비스: 현장 녹음 업로드 → STT → LLM 후교정 → SBAR 인수인계 양식 자동 작성 → TTS 브리핑
 - 대회 힌트: STT+LLM+TTS 셋 다 쓰면 가산점, 결과는 한 화면 데모, UI는 FastAPI
 
@@ -31,15 +33,17 @@
   - Training(각 도메인 약 65~70GB)은 아직 미사용, 파인튜닝 단계에서 필요시 추가
 
 ## 기술 스택
-- STT 추론: faster-whisper / 파인튜닝: transformers + PEFT(LoRA) + accelerate
-- 평가: jiwer (WER/CER)
+- STT 추론: faster-whisper
+- 파인튜닝: 수업 자료는 full fine-tuning(transformers Seq2SeqTrainer, LoRA 아님) 기준, 노트북 03→05→07→08 순서로 진행 예정.
+  리허설(small)은 이 방식을 그대로 따르고, 본선(large-v3)은 메모리·시간 제약에 따라 full FT/PEFT(LoRA) 중 택1 — E2에서 결정
+- 평가: jiwer (WER/CER, 대회 ERR은 CER 기준)
 - LLM(후교정·SBAR 구조화): 한국어 오픈소스 8B급 (Qwen/EXAONE 계열, 비교 후 확정)
 - TTS: 한국어 오픈소스 비교 후 확정 / 데모 UI: FastAPI 원페이지
 
 ## 실험 규칙 (E0~E6 플레이북)
 - E0: baseline(whisper-small) → E1: large-v3 무튜닝 → E2: LoRA 파인튜닝
   → E3: +증강 → E4: +LLM 후교정 → E5: +디코딩 튜닝 → E6: 앙상블(여유 시)
-- 기준점(E0, Zeroth 457샘플): whisper-small CER 12.25% / WER 37.5%
+- 기준점(E0, Zeroth 457샘플): whisper-small CER 12.25% / WER 37.5% — ERR 계산의 baseline 후보(대회 공식 baseline 확정 전까지는 CER 12.25%를 기준으로 상대 개선율 가늠)
 - E1b(사이드 프로브, 메인 시퀀스 아님): 콜센터 긴 통화(eval.py --dataset callcenter)로 small vs large-v3의
   순위가 짧은 발화(E0'/E1)와 다르게 나오는지 확인. 짧은 발화 결과만으로 모델을 확정하지 않기 위함
 - 모든 실험은 eval.py로 측정하고 experiments.md에 기록
