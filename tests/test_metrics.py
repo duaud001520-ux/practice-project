@@ -1,4 +1,4 @@
-from metrics import compute_metrics, normalize_text
+from metrics import compute_metrics, detect_repetition, normalize_text
 
 
 def test_compute_metrics_perfect_match_is_zero():
@@ -19,3 +19,11 @@ def test_normalize_text_strips_punctuation():
 
 def test_normalize_text_collapses_whitespace():
     assert normalize_text("안녕   하세요\n반갑습니다") == "안녕 하세요 반갑습니다"
+
+
+def test_detect_repetition_finds_repeated_phrase():
+    assert detect_repetition("감사합니다 감사합니다 감사합니다") is not None
+
+
+def test_detect_repetition_none_for_normal_text():
+    assert detect_repetition("오늘 컨디션은 좀 어떠세요?") is None
