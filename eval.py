@@ -3,8 +3,13 @@ import random
 import time
 from pathlib import Path
 
-from dataset import load_medical_pairs
+from dataset import load_callcenter_pairs, load_medical_pairs
 from metrics import compute_metrics, normalize_text
+
+LOADERS = {
+    "medical": load_medical_pairs,
+    "callcenter": load_callcenter_pairs,
+}
 
 
 def run_eval(pairs: list[tuple[Path, str]], model) -> dict[str, float]:
@@ -36,12 +41,13 @@ def main() -> None:
     parser.add_argument(
         "--data", default=str(Path.home() / "data" / "medical" / "eval")
     )
+    parser.add_argument("--dataset", choices=list(LOADERS), default="medical")
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
     from faster_whisper import WhisperModel
 
-    pairs = load_medical_pairs(args.data)
+    pairs = LOADERS[args.dataset](args.data)
     random.Random(args.seed).shuffle(pairs)
     subset = pairs[: args.n_samples]
 

@@ -22,6 +22,13 @@
   - 의사/환자, 간호사_2~4 zip은 현재 미사용 (분량 부족 판단 시 추가)
 - ~/data/kspon : 한국인 대화음성(KsponSpeech) 중 날씨_weather_03(1.08GB) + 취미_hobby_01(10.2GB)만 추출 (~11GB) — 파인튜닝 시 일반 발화 성능 퇴화 방지용 혼합. 부족하면 카테고리 추가
 - ~/data/noise : 보류. Windows 쪽 다운로드가 중단된 상태(전부 0바이트, .irx 임시파일만 존재) — 재다운로드 완료 후 재검토
+- ~/data/callcenter : AIHub 186 "복지 분야 콜센터 상담데이터" — **대회 데이터 유력 후보, 중요**. 다운로드 완전(210GB).
+  3개 도메인(대학병원/광역이동지원센터/정신건강복지센터) × Training/Validation, 원천 zip과 라벨 zip 분리.
+  통화(call) 폴더 하나 = 발화 단위로 쪼개진 wav+json 여러 개(파일명 정렬 = 시간순).
+  wav는 16kHz/16bit/mono PCM. json은 `inputText[0].orgtext`(전사문), `info[0].metadata`(화자타입/나이/성별/녹음환경 등).
+  통화 길이 분포(대학병원 Validation 기준): 최소 77s, 중앙값 365s, 최대 2138s — 실제로 이미 김. 발화 파일들을 파일명순으로 이어붙이면 긴 통화 오디오+전사문 재구성 가능
+  - eval/ ← Validation/대학병원 zip에서 60~180초 통화 25건만 선택 추출 (전체 원천 7.5GB 중 일부)
+  - Training(각 도메인 약 65~70GB)은 아직 미사용, 파인튜닝 단계에서 필요시 추가
 
 ## 기술 스택
 - STT 추론: faster-whisper / 파인튜닝: transformers + PEFT(LoRA) + accelerate
@@ -33,6 +40,8 @@
 - E0: baseline(whisper-small) → E1: large-v3 무튜닝 → E2: LoRA 파인튜닝
   → E3: +증강 → E4: +LLM 후교정 → E5: +디코딩 튜닝 → E6: 앙상블(여유 시)
 - 기준점(E0, Zeroth 457샘플): whisper-small CER 12.25% / WER 37.5%
+- E1b(사이드 프로브, 메인 시퀀스 아님): 콜센터 긴 통화(eval.py --dataset callcenter)로 small vs large-v3의
+  순위가 짧은 발화(E0'/E1)와 다르게 나오는지 확인. 짧은 발화 결과만으로 모델을 확정하지 않기 위함
 - 모든 실험은 eval.py로 측정하고 experiments.md에 기록
   (형식: 실험ID / 변경점 / 학습데이터 / 샘플수 / WER(원본) / CER(원본) / WER(정규화) / CER(정규화) / 소요시간 / 커밋해시)
   대회 ERR 산정 시 정규화(구두점 제거·띄어쓰기 통일) 여부가 아직 불확실해서 eval.py가 원본/정규화 값을 항상 같이 출력·기록함

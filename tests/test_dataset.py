@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from dataset import load_medical_pairs
+from dataset import load_callcenter_pairs, load_medical_pairs
 
 
 def test_load_medical_pairs_matches_wav_to_transcript(tmp_path):
@@ -24,3 +24,23 @@ def test_load_medical_pairs_matches_wav_to_transcript(tmp_path):
     wav_path, transcript = pairs[0]
     assert wav_path.name == "SPK1-1-A.wav"
     assert transcript == "안녕하세요"
+
+
+def test_load_callcenter_pairs_joins_utterances(tmp_path):
+    wav_dir = tmp_path / "wav"
+    label_dir = tmp_path / "labels"
+    wav_dir.mkdir()
+    label_dir.mkdir()
+
+    (wav_dir / "HOS0009770.wav").write_bytes(b"dummy")
+    (label_dir / "HOS0009770.json").write_text(
+        json.dumps({"utterances": ["여보세요.", "문의 좀 할게요."]}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    pairs = load_callcenter_pairs(tmp_path)
+
+    assert len(pairs) == 1
+    wav_path, transcript = pairs[0]
+    assert wav_path.name == "HOS0009770.wav"
+    assert transcript == "여보세요. 문의 좀 할게요."
