@@ -29,3 +29,18 @@ def test_run_eval_computes_metrics_from_pairs(tmp_path):
 
     assert result["wer"] == 0.0
     assert result["cer"] == 0.0
+    assert result["wer_norm"] == 0.0
+    assert result["cer_norm"] == 0.0
+
+
+def test_run_eval_normalized_metrics_ignore_punctuation(tmp_path):
+    wav1 = tmp_path / "a.wav"
+    wav1.write_bytes(b"x")
+    pairs = [(wav1, "안녕, 하세요!")]
+
+    model = _FakeModel({"a": "안녕 하세요"})
+    result = run_eval(pairs, model)
+
+    assert result["wer"] > 0.0
+    assert result["wer_norm"] == 0.0
+    assert result["cer_norm"] == 0.0

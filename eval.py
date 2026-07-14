@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 
 from dataset import load_medical_pairs
-from metrics import compute_metrics
+from metrics import compute_metrics, normalize_text
 
 
 def run_eval(pairs: list[tuple[Path, str]], model) -> dict[str, float]:
@@ -15,7 +15,18 @@ def run_eval(pairs: list[tuple[Path, str]], model) -> dict[str, float]:
         hyp = "".join(seg.text for seg in segments).strip()
         references.append(transcript)
         hypotheses.append(hyp)
-    return compute_metrics(references, hypotheses)
+
+    raw = compute_metrics(references, hypotheses)
+    normalized = compute_metrics(
+        [normalize_text(r) for r in references],
+        [normalize_text(h) for h in hypotheses],
+    )
+    return {
+        "wer": raw["wer"],
+        "cer": raw["cer"],
+        "wer_norm": normalized["wer"],
+        "cer_norm": normalized["cer"],
+    }
 
 
 def main() -> None:
@@ -42,7 +53,8 @@ def main() -> None:
 
     print(
         f"model={args.model} n={len(subset)} "
-        f"WER={metrics['wer'] * 100:.2f}% CER={metrics['cer'] * 100:.2f}% "
+        f"raw: WER={metrics['wer'] * 100:.2f}% CER={metrics['cer'] * 100:.2f}% "
+        f"normalized: WER={metrics['wer_norm'] * 100:.2f}% CER={metrics['cer_norm'] * 100:.2f}% "
         f"elapsed={elapsed:.1f}s"
     )
 
